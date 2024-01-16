@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Countdown Timer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+
+        .timer-container {
+            max-width: 400px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        .timer {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .input-container {
+            margin-bottom: 20px;
+        }
+
+        .inputField {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .startButton,
+        .saveButton,
+        .refreshButton {
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+            background-color: #4caf50;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+        }
+
+        .refreshButton {
+            background-color: #3498db;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="timer-container">
+        <div class="input-container">
+            <label for="timerName">Enter timer name:</label>
+            <input type="text" id="timerName" class="inputField" placeholder="Enter timer name">
+        </div>
+
+        <div class="input-container">
+            <label for="inputField">Enter end date and time:</label>
+            <input type="datetime-local" id="inputField" class="inputField">
+        </div>
+
+        <div class="button-container">
+            <button class="startButton" onclick="startTimer()">Start Timer</button>
+            <button class="saveButton" onclick="saveTimer()">Save Timer</button>
+            <button class="refreshButton" onclick="refreshLocalStorage()">Refresh Storage</button>
+        </div>
+
+        <div id="timersContainer">
+            <!-- Timers will be added here dynamically -->
+        </div>
+    </div>
+
+<script>
+    let timers = JSON.parse(localStorage.getItem('timers')) || [];
+
+    // Load and display existing timers when the page loads
+    window.onload = function () {
+        timers.forEach(function (timer) {
+            createTimerElement(timer);
+            startTimerInterval(timer);
+        });
+    };
+
+    function startTimer() {
+        const timerName = document.getElementById('timerName').value;
+        const inputField = document.getElementById('inputField');
+        const endDate = new Date(inputField.value);
+
+        if (!timerName.trim()) {
+            alert('Please enter a timer name.');
+            return;
+        }
+
+        if (isNaN(endDate)) {
+            alert('Please enter a valid date and time.');
+            return;
+        }
+
+        const newTimer = {
+            name: timerName,
+            endDate: endDate,
+            intervalId: null
+        };
+
+        timers.push(newTimer);
+
+        // Save timers to localStorage
+        localStorage.setItem('timers', JSON.stringify(timers));
+
+        // Update display
+        createTimerElement(newTimer);
+        startTimerInterval(newTimer);
+    }
+
+    function createTimerElement(timer) {
+        const timersContainer = document.getElementById('timersContainer');
+
+        const timerElement = document.createElement('div');
+        timerElement.className = 'timer';
+        timerElement.id = `timer-${timer.name}`;
+        timersContainer.appendChild(timerElement);
+
+        updateTimerElement(timer);
+
+        const hr = document.createElement('hr');
+        timersContainer.appendChild(hr);
+    }
+
+    function updateTimerElement(timer) {
+        const timerElement = document.getElementById(`timer-${timer.name}`);
+        const formattedTime = formatTime(timer.endDate);
+
+        timerElement.innerHTML = `<strong>${timer.name}</strong>: Time Left - ${formattedTime}`;
+    }
+
+    function startTimerInterval(timer) {
+        const updateTimer = function () {
+            const now = new Date();
+            const timeDifference = timer.endDate - now;
+    
+            if (timeDifference > 0) {
+                updateTimerElement(timer);
+            } else {
+                clearInterval(timer.intervalId);
+                const timerElement = document.getElementById(`timer-${timer.name}`);
+                if (timerElement) {
+                    timerElement.innerHTML = `<strong>${timer.name}</strong>: Time's up!`;
+                }
+            }
+        };
+    
+        // Check if the timer has already expired
+        if (timer.endDate > new Date()) {
+            // Call the function once to immediately update the display
+            updateTimer();
+    
+            // Set up the interval to update the display every second
+            timer.intervalId = setInterval(updateTimer, 1000);
+        }
+    }
+
+    function formatTime(endDate) {
+        // Convert endDate to a Date object if it's a string
+        if (typeof endDate === 'string') {
+            endDate = new Date(endDate);
+        }
+    
+        const now = new Date();
+        const timeDifference = endDate - now;
+    
+        const days = Math.floor(timeDifference / (24 * 60 * 60 * 1000));
+        const hours = Math.floor((timeDifference % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+        const minutes = Math.floor((timeDifference % (60 * 60 * 1000)) / (60 * 1000));
+        const seconds = Math.floor((timeDifference % (60 * 1000)) / 1000);
+    
+        return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    }
+    function saveTimer() {
+        const timerName = document.getElementById('timerName').value;
+        const inputField = document.getElementById('inputField');
+        const endDate = new Date(inputField.value);
+
+        if (!timerName.trim()) {
+            alert('Please enter a timer name.');
+            return;
+        }
+
+        if (isNaN(endDate)) {
+            alert('Please enter a valid date and time.');
+            return;
+        }
+
+        const savedTimer = {
+            name: timerName,
+            endDate: endDate,
+            intervalId: null
+        };
+
+        timers.push(savedTimer);
+
+        // Save timers to localStorage
+        localStorage.setItem('timers', JSON.stringify(timers));
+
+        // Update display
+        createTimerElement(savedTimer);
+        startTimerInterval(savedTimer);
+    }
+
+    function refreshLocalStorage() {
+        // Clear timers and localStorage
+        timers = [];
+        localStorage.removeItem('timers');
+
+        // Clear displayed timers
+        const timersContainer = document.getElementById('timersContainer');
+        timersContainer.innerHTML = '';
+
+        // You might want to reload the page after refreshing local storage
+        // Uncomment the line below if you want to reload the page
+        // location.reload();
+    }
+</script>
+
+</body>
+</html>
